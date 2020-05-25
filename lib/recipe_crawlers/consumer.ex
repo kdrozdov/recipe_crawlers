@@ -25,13 +25,18 @@ defmodule RecipeCrawlers.Consumer do
       #   page
       #   |> Floki.find(page, ".g-print-visible > .recipe__print-cover > img")
       #   |> Floki.attribute("src")
-      page
-      |> Floki.find("script[type=\"application/ld+json\"]")
-      |> List.first()
-      |> Floki.children()
-      |> Floki.text()
-      |> Jason.decode!()
-      |> IO.inspect()
+      item =
+        page
+        |> Floki.find("script[type=\"application/ld+json\"]")
+        |> List.first()
+
+      if !is_nil(item) do
+        item
+        |> Floki.children()
+        |> Floki.text()
+        |> IO.inspect()
+        |> RecipeCrawlers.KafkaProducer.produce_sync()
+      end
     else
       Logger.error("Cannot download " <> loc)
     end
